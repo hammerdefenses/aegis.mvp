@@ -12,13 +12,13 @@ def scan_container(image_name: str) -> dict:
     result = {
         "target": image_name,
         "status": "scan_complete",
-        "timestamp": "2026-01-18T00:00:00Z",  # Placeholder
+        "timestamp": datetime.utcnow().isoformat() + "Z",
         "total_vulnerabilities": 0,
         "severity_breakdown": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0},
         "vulnerabilities": []
     }
 
-    # Placeholder: Simulate Trivy output
+    # Placeholder simulation
     if "nginx:latest" in image_name:
         result["total_vulnerabilities"] = 0
     else:
