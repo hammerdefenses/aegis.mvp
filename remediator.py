@@ -15,7 +15,6 @@ def generate_remediations(findings: list) -> list:
         severity = finding.get("severity", "LOW")
         confidence = finding.get("confidence_score", 5)
 
-        # Placeholder suggestions based on common vulns
         if "hard coded password" in finding["vulnerability"].lower():
             suggestion = "Move sensitive values to environment variables or secure vault."
             patch_preview = {
