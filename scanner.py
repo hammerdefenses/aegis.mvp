@@ -8,6 +8,7 @@ def scan_target(target_path: str) -> dict:
     """
     Unified entry point: detects if target is code or container and routes accordingly.
     Scans Python code with Bandit or containers/images with Trivy.
+    Returns dict with findings, severity breakdown, confidence scores.
     """
     result = {
         "target": target_path,
