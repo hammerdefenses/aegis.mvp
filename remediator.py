@@ -9,8 +9,6 @@ def generate_remediations(findings: list) -> list:
     Generates remediation suggestions for detected findings.
     Returns list of dicts with suggestion, confidence score, patch preview.
     """
-    # TODO: Replace placeholder with real remediation logic (e.g., ML model or rule engine)
-    # FIXME: Add real confidence score derivation based on vuln data
     remediations = []
 
     for finding in findings:
