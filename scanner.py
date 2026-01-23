@@ -4,6 +4,14 @@ Project Epsilon
 © 2026 — All rights reserved.
 """
 
+def calculate_confidence(severity: str) -> int:
+    """Simple confidence score calculator (placeholder for real logic)."""
+    if severity == "HIGH":
+        return 8
+    if severity == "MEDIUM":
+        return 6
+    return 3
+
 def scan_target(target_path: str) -> dict:
     """
     Unified entry point: detects if target is code or container and routes accordingly.
@@ -23,13 +31,12 @@ def scan_target(target_path: str) -> dict:
     # Placeholder: Detect code vs container
     if target_path.endswith(".py") or target_path.endswith(".py/"):
         # Code scan (Bandit placeholder)
-        result["total_findings"] = 3
-        result["severity_breakdown"]["MEDIUM"] = 2
+        result["total_findings"] = 2
+        result["severity_breakdown"]["MEDIUM"] = 1
         result["severity_breakdown"]["LOW"] = 1
         result["findings"] = [
-            {"vulnerability": "Hardcoded password", "severity": "LOW", "confidence_score": 3, "line": 3},
-            {"vulnerability": "Use of exec detected", "severity": "MEDIUM", "confidence_score": 6, "line": 4},
-            {"vulnerability": "Insecure function - consider ast.literal_eval()", "severity": "MEDIUM", "confidence_score": 5, "line": 8}
+            {"vulnerability": "Possible hard coded password", "severity": "LOW", "confidence_score": calculate_confidence("LOW")},
+            {"vulnerability": "Use of exec detected", "severity": "MEDIUM", "confidence_score": calculate_confidence("MEDIUM")}
         ]
     else:
         # Container scan (Trivy placeholder)
