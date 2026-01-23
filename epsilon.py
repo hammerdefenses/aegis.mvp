@@ -25,11 +25,12 @@ def epsilon(target: str, output: str, remediate: bool = False) -> None:
     click.echo("Epsilon activating...")
     click.echo(f"Target: {target}")
     click.echo(f"Timestamp: {datetime.utcnow().isoformat()}Z")
+    click.echo(f"Scan ID: {datetime.utcnow().strftime('%Y%m%d-%H%M%S')}")
 
     try:
         result = scan_target(target)
 
-        # PQC encryption on full result
+        # PQC encryption on full result (quantum-resistant placeholder)
         encrypted = encrypt_report(json.dumps(result))
         click.echo(f"Encrypted Report (Quantum-Resistant): {encrypted}")
 
@@ -59,9 +60,10 @@ def epsilon(target: str, output: str, remediate: bool = False) -> None:
                 if items:
                     click.echo("Findings:")
                     for item in items:
-                        click.echo(f"  - {item.get('vulnerability', item.get('VulnerabilityID', 'Unknown'))} "
-                                   f"(Severity: {item.get('severity', item.get('Severity', 'UNKNOWN'))}, "
-                                   f"Confidence: {item['confidence_score']}/10)")
+                        vuln_name = item.get('vulnerability') or item.get('VulnerabilityID') or 'Unknown'
+                        sev = item.get('severity') or item.get('Severity') or 'UNKNOWN'
+                        conf = item.get('confidence_score', 5)
+                        click.echo(f"  - {vuln_name} (Severity: {sev}, Confidence: {conf}/10)")
                 else:
                     click.echo("No vulnerabilities detected.")
     except Exception as e:
