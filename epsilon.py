@@ -6,7 +6,7 @@ Project Epsilon
 
 import click
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from scanner import scan_target
 from remediator import generate_remediations
@@ -24,8 +24,11 @@ def epsilon(target: str, output: str, remediate: bool = False) -> None:
     """
     click.echo("Epsilon activating...")
     click.echo(f"Target: {target}")
-    click.echo(f"Timestamp: {datetime.utcnow().isoformat()}Z")
-    click.echo(f"Scan ID: {datetime.utcnow().strftime('%Y%m%d-%H%M%S')}")
+    
+    # Fixed: Use timezone.utc instead of datetime.utcnow() which is deprecated
+    current_time = datetime.now(timezone.utc)
+    click.echo(f"Timestamp: {current_time.isoformat()}")
+    click.echo(f"Scan ID: {current_time.strftime('%Y%m%d-%H%M%S')}")
 
     try:
         result = scan_target(target)
