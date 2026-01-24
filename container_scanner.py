@@ -56,7 +56,7 @@ def scan_container(image_name: str, trivy_path: str = "trivy", timeout_sec: int 
                                 "VulnerabilityID": vuln.get("VulnerabilityID"),
                                 "PkgName": vuln.get("PkgName"),
                                 "Severity": sev,
-                                "confidence_score": 8  # TODO: Derive from CVSS/EPSS
+                                "confidence_score": 8  # TODO: Derive real score from CVSS/EPSS
                             })
         else:
             result["status"] = "failed"
