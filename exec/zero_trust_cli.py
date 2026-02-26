@@ -1,159 +1,151 @@
+# zero_trust_cli.py
 """
-A.I.M. Zero-Trust Command Interceptor
-Production-grade policy-enforced command execution with signing
-© 2026 — All rights reserved.
+Hammer Defense Industries - Aegis
+Zero-Compromise Command-Line Hardening Platform
+Real-time prediction, enforcement, and MITRE ATT&CK mapping
 """
 
-import logging
-import shlex
-import subprocess
+import os
 import sys
+import subprocess
+import logging
 import hashlib
-import json
 from datetime import datetime, timezone
-from typing import Dict, List, Any
+from typing import Dict, Any, List
 
-from command_normalizer import CommandNormalizer
-from models.command_sequence_model import CommandSequenceModel
-from signing.hardware_identity import HardwareIdentity
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("aegis")
 
-logger = logging.getLogger(__name__)
+# Simple MITRE map (expand as needed)
+MITRE_TECHNIQUES = {
+    # Execution
+    "bash": {"id": "T1059.004", "name": "Unix Shell"},
+    "sh": {"id": "T1059.004", "name": "Unix Shell"},
+    "python": {"id": "T1059.006", "name": "Python"},
+    # Privilege Escalation
+    "sudo": {"id": "T1548", "name": "Abuse Elevation Control Mechanism"},
+    "su": {"id": "T1548", "name": "Abuse Elevation Control Mechanism"},
+    # Credential Access
+    "shadow": {"id": "T1003", "name": "OS Credential Dumping"},
+    "passwd": {"id": "T1003", "name": "OS Credential Dumping"},
+    # Discovery
+    "whoami": {"id": "T1033", "name": "System Owner/User Discovery"},
+    # Defense Evasion
+    "rm": {"id": "T1070", "name": "Indicator Removal"},
+}
+
+def map_to_mitre(command: str) -> List[Dict]:
+    """Map command to MITRE ATT&CK techniques."""
+    matches = []
+    lower_cmd = command.lower().strip()
+    for keyword, tech in MITRE_TECHNIQUES.items():
+        if keyword in lower_cmd:
+            matches.append(tech)
+    return matches
 
 class ZeroTrustCLI:
-    """
-    Zero-trust command execution wrapper with risk scoring, policy checks, JIT elevation, audit logging, constrained run, and hardware signing (testing mode).
-    """
-    def __init__(self, user: str, device: str, session_token: str):
+    def __init__(self, user: str = "unknown", device: str = "unknown"):
         self.user = user
         self.device = device
-        self.session_token = session_token
-        self.policy_cache: Dict[str, Any] = {}
-        self.normalizer = CommandNormalizer()
-        self.anomaly_model = CommandSequenceModel(window_size=10)
-        self.command_history: List[str] = []
-        self.signer = HardwareIdentity()  # Hardware signing (testing mode)
+        self.session_token = os.urandom(16).hex()
 
-    def execute(self, raw_command: str) -> Dict[str, Any]:
-        """
-        Execute a command under zero-trust rules with signing.
-        Returns result or raises PermissionError on policy block.
-        """
+    def execute(self, command: str) -> Dict[str, Any]:
         timestamp = datetime.now(timezone.utc).isoformat()
-        audit_id = self._generate_audit_id(raw_command, timestamp)
+        audit_id = hashlib.sha256(f"{command}{self.session_token}{timestamp}".encode()).hexdigest()[:16]
 
-        # Step 1: Normalize + threat scan
-        norm_result = self.normalizer.normalize_and_scan(raw_command)
-        logger.info(f"Normalized command: {norm_result['normalized']}")
-        if norm_result["threats"]:
-            self._log_blocked(audit_id, raw_command, "Threat detected in normalization")
-            raise PermissionError(f"Blocked: {', '.join(norm_result['threats'])}")
-        if norm_result["obfuscation_detected"]:
-            self._log_blocked(audit_id, raw_command, "Obfuscation detected")
-            raise PermissionError("Blocked: Obfuscation/evasion detected")
-
-        # Step 2: Anomaly detection
-        self.command_history.append(raw_command)
-        if len(self.command_history) >= self.anomaly_model.window_size:
-            anomaly_result = self.anomaly_model.evaluate(self.command_history[-self.anomaly_model.window_size:])
-            logger.info(f"Anomaly score: {anomaly_result['anomaly_score']} | Is anomaly: {anomaly_result['is_anomaly']}")
-            if anomaly_result["anomaly_score"] < -0.05:
-                self._log_blocked(audit_id, raw_command, "Behavioral anomaly detected")
-                raise PermissionError("Blocked: Behavioral anomaly detected (score below threshold)")
-
-        # Step 3: Risk scoring
-        risk_score = self._evaluate_risk(norm_result["normalized"])
-        logger.info(f"Risk score for '{raw_command[:50]}...': {risk_score}")
-
-        # Step 4: Policy evaluation
-        policy_result = self._evaluate_policy(norm_result["normalized"], risk_score)
-        if not policy_result["allowed"]:
-            self._log_blocked(audit_id, raw_command, policy_result["reason"])
-            raise PermissionError(f"Blocked by policy: {policy_result['reason']}")
-
-        # Step 5: JIT elevation (stub)
-        if policy_result["needs_jit"]:
-            logger.warning("JIT elevation required - stubbed")
-
-        # Step 6: Sign command (non-repudiation)
-        signed = self.signer.sign_command(raw_command)
-        logger.info(f"Signed command: {signed['status']}")
-
-        # Step 7: Audit log before execution
-        self._log_execution(audit_id, raw_command, timestamp)
-
-        # Step 8: Constrained execution
-        try:
-            result = self._run_constrained(raw_command)
-            self._log_success(audit_id, result)
-            return {
-                "status": "success",
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "returncode": result.returncode,
-                "signed": signed  # Include signed payload for audit
-            }
-        except Exception as e:
-            self._log_failure(audit_id, str(e))
-            raise RuntimeError(f"Execution failed: {str(e)}")
-
-    def _generate_audit_id(self, command: str, timestamp: str) -> str:
-        """Generate unique audit ID from command + timestamp + session."""
-        hash_input = f"{command}|{timestamp}|{self.session_token}"
-        return hashlib.sha256(hash_input.encode()).hexdigest()[:16]
-
-    def _evaluate_risk(self, command: str) -> int:
-        """Simple risk scoring (expand with ML or threat intel later)."""
-        score = 0
-        if "sudo" in command or "su" in command:
-            score += 40
-        if any(p in command for p in ["/etc/shadow", "/proc", "/dev/mem"]):
-            score += 30
-        if "rm -rf" in command:
-            score += 50
-        return min(score, 100)
-
-    def _evaluate_policy(self, command: str, risk_score: int) -> Dict[str, Any]:
-        """Dynamic policy check (stub - integrate real policy engine later)."""
-        if risk_score > 70:
-            return {"allowed": False, "reason": "High risk score", "needs_jit": False}
-        if "rm -rf /" in command:
-            return {"allowed": False, "reason": "Destructive command blocked", "needs_jit": False}
-        return {"allowed": True, "reason": "Allowed", "needs_jit": False}
-
-    def _log_blocked(self, audit_id: str, command: str, reason: str):
-        """Log blocked command for audit."""
-        logger.warning(f"[BLOCKED] Audit ID: {audit_id} | Command: {command[:100]}... | Reason: {reason}")
-
-    def _log_execution(self, audit_id: str, command: str, timestamp: str):
-        """Log pre-execution audit entry."""
         logger.info(f"[EXEC] Audit ID: {audit_id} | User: {self.user} | Command: {command[:100]}... | Time: {timestamp}")
 
-    def _log_success(self, audit_id: str, result: subprocess.CompletedProcess):
-        """Log successful execution."""
-        logger.info(f"[SUCCESS] Audit ID: {audit_id} | Return code: {result.returncode}")
+        # MITRE Mapping
+        mitre_matches = map_to_mitre(command)
+        mitre_summary = [f"{m['id']} - {m['name']}" for m in mitre_matches]
 
-    def _log_failure(self, audit_id: str, error: str):
-        """Log execution failure."""
-        logger.error(f"[FAILURE] Audit ID: {audit_id} | Error: {error}")
+        # Risk Scoring & Policy Check
+        risk_score = 0
+        is_blocked = False
 
-    def _run_constrained(self, raw_command: str) -> subprocess.CompletedProcess:
-        """Execute command in constrained environment (stub - use bubblewrap/nsjail later)."""
-        # TODO: Replace with real constrained runner (bwrap, nsjail, landlock, etc.)
-        cmd_parts = shlex.split(raw_command)
-        return subprocess.run(
-            cmd_parts,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        if mitre_matches:
+            risk_score = max(40, len(mitre_matches) * 20)
+            is_blocked = risk_score > 60  # Only block HIGH/CRITICAL, flag MEDIUM
 
+        normalized = command.lower().strip()
+        if "sudo su" in normalized or "su -" in normalized:
+            risk_score = max(risk_score, 40)
+            is_blocked = True
+        elif "cat /etc/shadow" in normalized:
+            risk_score = max(risk_score, 80)
+            is_blocked = True
+
+        if is_blocked:
+            logger.warning(f"[BLOCKED] Audit ID: {audit_id} | Risk: {risk_score}/100 | MITRE: {mitre_summary}")
+            briefing = self.generate_briefing(command, risk_score, mitre_matches)
+            return {
+                "status": "blocked",
+                "risk_score": risk_score,
+                "mitre_tags": mitre_summary,
+                "briefing": briefing,
+                "message": "Command blocked by zero-trust policy"
+            }
+
+        # Log flagged-but-allowed commands
+        if mitre_matches:
+            logger.warning(f"[FLAGGED] Audit ID: {audit_id} | Risk: {risk_score}/100 | MITRE: {mitre_summary} | Executing with monitoring")
+
+        # Safe Execution
+        env = os.environ.copy()
+        timeout = 5 if "sudo" in normalized else 30
+
+        try:
+            proc = subprocess.run(
+                command.split(),
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=env
+            )
+            output = {
+                "status": "success",
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+                "returncode": proc.returncode,
+                "risk_score": risk_score,
+                "mitre_tags": mitre_summary
+            }
+            logger.info(f"[SUCCESS] Audit ID: {audit_id} | Code: {proc.returncode}")
+        except subprocess.TimeoutExpired:
+            output = {"status": "timeout", "error": "Command timed out"}
+            logger.error(f"[TIMEOUT] Audit ID: {audit_id}")
+        except Exception as e:
+            output = {"status": "error", "error": str(e)}
+            logger.error(f"[ERROR] Audit ID: {audit_id} | {str(e)}")
+
+        return output
+
+    def generate_briefing(self, command: str, risk_score: int, mitre_tags: List[Dict]) -> Dict[str, Any]:
+        threat_level = "CRITICAL" if risk_score > 70 else "HIGH" if risk_score > 40 else "MEDIUM"
+        return {
+            "threat_level": threat_level,
+            "summary": f"High-risk command attempted: {command}",
+            "mitre_mappings": [f"{t['id']} - {t['name']}" for t in mitre_tags],
+            "recommendations": [
+                "Investigate user activity immediately",
+                "Review access logs for this session",
+                "Lock account if anomalous pattern continues"
+            ],
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
 
 if __name__ == "__main__":
-    cli = ZeroTrustCLI(user="jeb", device="laptop", session_token="abc123")
-    try:
-        result = cli.execute("ls -la")
-        print("Execution result:", result)
-    except PermissionError as e:
-        print("Blocked:", str(e))
-    except Exception as e:
-        print("Execution error:", str(e))
+    cli = ZeroTrustCLI(user="testuser", device="testdevice")
+
+    if len(sys.argv) < 2:
+        print("Usage: python3 zero_trust_cli.py <command>")
+        sys.exit(1)
+
+    command = " ".join(sys.argv[1:])
+    result = cli.execute(command)
+    print(result)

